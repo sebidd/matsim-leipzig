@@ -13,11 +13,12 @@ import org.apache.logging.log4j.Logger;
 import org.matsim.analysis.*;
 import org.matsim.analysis.emissions.RunOfflineAirPollutionAnalysisByVehicleCategory;
 import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
+import org.matsim.api.core.v01.Coord;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Plan;
+import org.matsim.api.core.v01.population.*;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.analysis.CheckPopulation;
@@ -60,6 +61,9 @@ import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
+import org.matsim.core.utils.geometry.CoordUtils;
+import org.matsim.core.utils.io.IOUtils;
+import org.matsim.core.utils.misc.Time;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsModule;
@@ -71,9 +75,11 @@ import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
+import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
+import playground.vsp.simpleParkingCostHandler.ParkingCostModule;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -81,7 +87,6 @@ import java.util.*;
 
 /**
  * Run the Leipzig scenario.  All the upstream stuff (network generation, initial demand generation) is in the Makefile.
- * For the simulation of policy cases input parameters from {@link org.matsim.run.prepare.NetworkOptions} are needed
  */
 @CommandLine.Command(header = ":: Open Leipzig Scenario ::", version = RunLeipzigScenario.VERSION)
 @MATSimApplication.Prepare({
@@ -104,21 +109,23 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 
+	@CommandLine.Option(names = "--with-drt", defaultValue = "false", description = "Enable DRT service")
+	private boolean drt;
+
 	@CommandLine.Option(names = "--waiting-time-threshold-optDrt", description = "Set waitingTime Threshold fot DRT optimization and enable it. Here, enabling DRT service is mandatory.")
 	private Double waitingTimeThreshold;
 
 	@CommandLine.Option(names = "--bikes", defaultValue = "true", description = "Enable qsim for bikes", negatable = true)
 	private boolean bike;
 
-	//TODO: define adequate values for the following doubles
-	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
-	private Double parkingCostTimePeriodStart;
-
-	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
-	private Double parkingCostTimePeriodEnd;
+	@CommandLine.Option(names = "--parking-cost", defaultValue = "false", description = "Enable parking costs on network", negatable = true)
+	private boolean parkingCost;
 
 	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
 	private boolean incomeDependent;
+
+	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed")
+	boolean tempo30Zone;
 
 	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
 	Double relativeSpeedChange;
@@ -127,7 +134,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	private ShpOptions shp;
 
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
-	private final NetworkOptions networkOpt = new NetworkOptions();
+	private final NetworkOptions network = new NetworkOptions();
 
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);
@@ -145,6 +152,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@Override
 	protected Config prepareConfig(Config config) {
 
+		config.controler().setOverwriteFileSetting( OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
 		SnzActivities.addScoringParams(config);
 
 		if (sample.isSet()) {
@@ -156,12 +165,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 			config.qsim().setStorageCapFactor(sample.getSize() / 100.0);
 		}
 
-		//config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.abort);
+		// config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.abort);
 
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		// (yyyy what exactly is this doing?)
 
-		if (networkOpt.hasDrtArea()) {
+		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 			ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
 			DrtConfigs.adjustMultiModeDrtConfig(multiModeDrtConfigGroup, config.planCalcScore(), config.plansCalcRoute());
@@ -190,7 +199,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		} else
 			log.warn("Bikes on network are disabled");
 
-		if (networkOpt.hasParkingCostArea()) {
+		if (parkingCost) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 		}
 
@@ -211,12 +220,51 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 				link.setAllowedModes(newModes);
 			}
+
+
 		}
 
-		if (networkOpt.hasDrtArea()) {
+		// new agent
+		PopulationFactory pf = scenario.getPopulation().getFactory();
+
+		Id<Person> id = Id.createPersonId("Max Mustermann");
+		Person testperson = pf.createPerson(id);
+
+		Plan plan = pf.createPlan();
+		testperson.addPlan(plan);
+		testperson.getAttributes().putAttribute("subpopulation", "person");
+
+		Coord homeCoord = CoordUtils.createCoord(726991, 5688560);
+		Activity ac1 = pf.createActivityFromCoord("home_600", homeCoord);
+		ac1.setEndTime((8*60*60));
+		plan.addActivity(ac1);
+
+		Leg leg1 = pf.createLeg(TransportMode.car);
+		plan.addLeg(leg1);
+
+		Coord workCoord = CoordUtils.createCoord(727928, 5688723);
+		Activity ac2 = pf.createActivityFromCoord("work_600", workCoord);
+		ac2.setEndTime(16*60*60);
+		plan.addActivity(ac2);
+
+		Leg leg2 = pf.createLeg(TransportMode.car);
+		plan.addLeg(leg2);
+
+		Activity ac3 = pf.createActivityFromCoord("home_600", homeCoord);
+		plan.addActivity(ac3);
+
+		scenario.getPopulation().addPerson(testperson);
+		// end of new agent
+
+		if (drt) {
 			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
 		}
-		networkOpt.prepare(scenario.getNetwork());
+
+		network.prepare(scenario.getNetwork());
+
+//		if (tempo30Zone) {
+//			SpeedReduction.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())), relativeSpeedChange);
+//		}
 	}
 
 	@Override
@@ -239,12 +287,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 				bind(AnalysisMainModeIdentifier.class).to(LeipzigMainModeIdentifier.class);
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
-				if (networkOpt.hasCarFreeArea()) {
+				if (network.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
 
-				if (networkOpt.hasParkingCostArea()) {
-					addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
+				if (parkingCost) {
+					install(new ParkingCostModule());
 					install(new PersonMoneyEventsAnalysisModule());
 				}
 
@@ -265,7 +313,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 			}
 		});
 
-		if (networkOpt.hasDrtArea()) {
+		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 
 			//set fare params; flexa has the same prices as leipzig PT: Values taken out of LeipzigPtFareModule -sm0522
@@ -375,13 +423,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 		modeChoiceConfigGroup.setModes(modes.toArray(new String[0]));
 	}
 
-/*	@Override
-	protected List<MATSimAppCommand> preparePostProcessing(Path outputFolder, String runId) {
+	//@Override
+	//protected List<MATSimAppCommand> preparePostProcessing(Path outputFolder, String runId) {
 
-		//String hbefaFileWarm = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
-		//String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/ColdStart_Vehcat_2020_Average_withHGVetc.csv.enc";
+	//	String hbefaFileWarm = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
+	//	String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/ColdStart_Vehcat_2020_Average_withHGVetc.csv.enc";
 
-		//return List.of(new RunOfflineAirPollutionAnalysisByVehicleCategory(outputFolder.toString(), runId, hbefaFileWarm, hbefaFileCold, outputFolder.toString()));
-		return List.of();
-	}*/
+	//	return List.of(new RunOfflineAirPollutionAnalysisByVehicleCategory(outputFolder.toString(), runId, hbefaFileWarm, hbefaFileCold, outputFolder.toString()));
+	//}
 }
