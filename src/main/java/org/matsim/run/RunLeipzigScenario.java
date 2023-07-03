@@ -61,9 +61,6 @@ import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
-import org.matsim.core.utils.geometry.CoordUtils;
-import org.matsim.core.utils.io.IOUtils;
-import org.matsim.core.utils.misc.Time;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsModule;
@@ -75,7 +72,6 @@ import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
-import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
@@ -224,39 +220,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		}
 
-		// new agent
-		PopulationFactory pf = scenario.getPopulation().getFactory();
-
-		Id<Person> id = Id.createPersonId("Max Mustermann");
-		Person testperson = pf.createPerson(id);
-
-		Plan plan = pf.createPlan();
-		testperson.addPlan(plan);
-		testperson.getAttributes().putAttribute("subpopulation", "person");
-
-		Coord homeCoord = CoordUtils.createCoord(726991, 5688560);
-		Activity ac1 = pf.createActivityFromCoord("home_600", homeCoord);
-		ac1.setEndTime((8*60*60));
-		plan.addActivity(ac1);
-
-		Leg leg1 = pf.createLeg(TransportMode.car);
-		plan.addLeg(leg1);
-
-		Coord workCoord = CoordUtils.createCoord(727928, 5688723);
-		Activity ac2 = pf.createActivityFromCoord("work_600", workCoord);
-		ac2.setEndTime(16*60*60);
-		plan.addActivity(ac2);
-
-		Leg leg2 = pf.createLeg(TransportMode.car);
-		plan.addLeg(leg2);
-
-		Activity ac3 = pf.createActivityFromCoord("home_600", homeCoord);
-		plan.addActivity(ac3);
-
-		scenario.getPopulation().addPerson(testperson);
-		// end of new agent
-
-		if (drt) {
+		if (network.hasDrtArea()) {
 			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
 		}
 
@@ -312,6 +276,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
 			}
 		});
+//		controler.addOverridingModule(new AbstractModule(() -> {
+//			//TODO
+//
+//		}));
 
 		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
