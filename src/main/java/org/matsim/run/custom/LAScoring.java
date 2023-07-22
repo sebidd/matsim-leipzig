@@ -7,11 +7,11 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.scoring.SumScoringFunction;
 import org.matsim.core.scoring.functions.*;
 
-public class CarProhibitedAreaScoring implements ScoringFunctionFactory {
+public class LAScoring implements ScoringFunctionFactory {
 
 	private final Scenario scenario;
 
-	private CarProhibitedAreaScoring(Scenario scenario){
+	private LAScoring(Scenario scenario){
 		this.scenario = scenario;
 	}
 
@@ -24,7 +24,7 @@ public class CarProhibitedAreaScoring implements ScoringFunctionFactory {
 		sum.addScoringFunction(new CharyparNagelLegScoring(params, scenario.getNetwork()));
 		sum.addScoringFunction(new CharyparNagelMoneyScoring(params));
 		sum.addScoringFunction(new CharyparNagelAgentStuckScoring(params));
-		sum.addScoringFunction(new CarProhibitedAreaScoringFunction(1, 0));
+		sum.addScoringFunction(new LAScoringFunction((e) -> {return e;}));
 
 		return sum;
 	}

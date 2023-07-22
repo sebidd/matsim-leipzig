@@ -70,6 +70,7 @@ import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesM
 import org.matsim.optDRT.MultiModeOptDrtConfigGroup;
 import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
+import org.matsim.run.custom.LAModule;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
@@ -123,6 +124,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed")
 	boolean tempo30Zone;
 
+	@CommandLine.Option(names = "--local-zones", defaultValue = "false", description = "Residential zones have restricted access by crossing traffic.")
+	private boolean localZones;
+	
 	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
 	Double relativeSpeedChange;
 
@@ -331,6 +335,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (bike) {
 			Bicycles.addAsOverridingModule(controler);
+		}
+		
+		if(localZones) {
+//			controler.addOverridingModule(new LAModule(""));
 		}
 	}
 
