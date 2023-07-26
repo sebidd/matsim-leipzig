@@ -1,7 +1,7 @@
 package org.matsim.run.custom;
 
 import org.matsim.api.core.v01.Coord;
-import org.matsim.run.custom.LAScoringFunction.LinkValidation;
+import org.matsim.core.controler.AbstractModule;
 
 import de.sebidd.base.io.osm.OSMParser;
 import de.sebidd.base.math.geom.Vec2d;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class LAModule {
+public class LAModule extends AbstractModule {
 
 	private final Set<Polygon> polygon_set;
 	
@@ -40,5 +40,10 @@ public class LAModule {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public void install() {
+		addEventHandlerBinding().to(LAHandler.class);
 	}
 }

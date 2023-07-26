@@ -278,12 +278,14 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
 				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
+				
+				localZones = true;
+				if(localZones) {
+					install(new LAModule(""));	
+				}
+				
 			}
 		});
-//		controler.addOverridingModule(new AbstractModule(() -> {
-//			//TODO
-//
-//		}));
 
 		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
@@ -335,10 +337,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (bike) {
 			Bicycles.addAsOverridingModule(controler);
-		}
-		
-		if(localZones) {
-//			controler.addOverridingModule(new LAModule(""));
 		}
 	}
 

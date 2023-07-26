@@ -24,7 +24,7 @@ public class LAScoring implements ScoringFunctionFactory {
 		sum.addScoringFunction(new CharyparNagelLegScoring(params, scenario.getNetwork()));
 		sum.addScoringFunction(new CharyparNagelMoneyScoring(params));
 		sum.addScoringFunction(new CharyparNagelAgentStuckScoring(params));
-		sum.addScoringFunction(new LAScoringFunction((e) -> {return e;}));
+		sum.addScoringFunction(new LAHandler((e) -> {return -Math.pow(e, 2);}, scenario));
 
 		return sum;
 	}
