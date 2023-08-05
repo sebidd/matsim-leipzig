@@ -1,6 +1,6 @@
 package org.matsim.run.custom;
 
-import de.sebidd.rail.base.component.Polygon;
+import org.locationtech.jts.geom.Polygon;
 
 public class LAPolygonValidator {
 

@@ -1,49 +1,21 @@
 package org.matsim.run.custom;
 
-import org.matsim.api.core.v01.Coord;
 import org.matsim.core.controler.AbstractModule;
-
-import de.sebidd.base.io.osm.OSMParser;
-import de.sebidd.base.math.geom.Vec2d;
-import de.sebidd.rail.base.component.Polygon;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import org.matsim.core.controler.Controler;
 
 public class LAModule extends AbstractModule {
-
-	private final Set<Polygon> polygon_set;
 	
-	public LAModule(String path){
-		this.polygon_set = new HashSet<>();
-		OSMParser parser = new OSMParser();
-	}
-
-	public Polygon getContainingPolygon(Vec2d pos) {
-		for(Polygon p : polygon_set) {
-			if(p.contains(pos)) return p;
-		}
-		return null;
-	}
-
-	public Set<Polygon> getPolygons() {
-		return this.polygon_set;
-	}
+	private LAHandler handler;
 	
-	public boolean contains(Coord coord){
-		for(Polygon poly : polygon_set) {
-			if(poly.contains(new Vec2d(coord.getX(), coord.getY()))) {
-				return true;
-			}
-		}
-		return false;
+	
+	public LAModule(Controler controler, String path){
+		this.handler = new LAHandler(controler, this);
 	}
 
 	@Override
 	public void install() {
-		addEventHandlerBinding().to(LAHandler.class);
+		addEventHandlerBinding().toInstance(handler);
+		addControlerListenerBinding().toInstance(handler);
 	}
+	
 }

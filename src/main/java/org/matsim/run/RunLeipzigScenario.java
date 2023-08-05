@@ -98,7 +98,7 @@ import java.util.*;
 		DrtVehiclesRoadUsageAnalysis.class, ParkedVehiclesAnalysis.class, NoiseAnalysis.class
 })
 public class RunLeipzigScenario extends MATSimApplication {
-
+	
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
 
 	static final String VERSION = "1.1";
@@ -281,7 +281,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 				
 				localZones = true;
 				if(localZones) {
-					install(new LAModule(""));	
+					install(new LAModule(controler, "res/Leipzig.osm"));	
 				}
 				
 			}
