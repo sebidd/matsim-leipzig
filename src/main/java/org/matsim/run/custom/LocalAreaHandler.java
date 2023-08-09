@@ -23,7 +23,7 @@ import org.matsim.core.controler.events.IterationStartsEvent;
 import org.matsim.core.controler.listener.IterationEndsListener;
 import org.matsim.core.controler.listener.IterationStartsListener;
 import org.matsim.core.scoring.EventsToLegs.LegHandler;
-import org.matsim.run.custom.geom.LocalChecker;
+import org.matsim.run.custom.geom.LocalAreaUtils;
 import org.matsim.vehicles.Vehicle;
 
 import com.google.inject.Inject;
@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-public class LAHandler implements IterationEndsListener, IterationStartsListener, ActivityEndEventHandler, ActivityStartEventHandler, VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler, LinkLeaveEventHandler {
+public class LocalAreaHandler implements IterationEndsListener, IterationStartsListener, ActivityEndEventHandler, ActivityStartEventHandler, VehicleEntersTrafficEventHandler, VehicleLeavesTrafficEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler, LinkLeaveEventHandler {
 	
 	public final Function<Double, Double> scoring_validator;
 	
@@ -60,7 +60,7 @@ public class LAHandler implements IterationEndsListener, IterationStartsListener
 
 	private final String TEST_PATH = "C:\\Users\\Sebastian\\Desktop\\matsim-out\\";
 
-	private LAModule module;
+	private LocalAreaModule module;
 
 	private Controler controler;
 	
@@ -68,9 +68,9 @@ public class LAHandler implements IterationEndsListener, IterationStartsListener
 	
 	
 	@Inject
-	public LAHandler(Controler controler, LAModule module){
+	public LocalAreaHandler(Controler controler, LocalAreaModule module){
 		this.module = module;
-		LocalChecker.setOSM("res/Leipzig.osm");
+		LocalAreaUtils.setOSM("res/Leipzig.osm");
 		this.scoring_validator = (e) -> {return -1d;};
 		this.controler = controler;
 		this.leg_map = new HashMap<>();
@@ -110,8 +110,8 @@ public class LAHandler implements IterationEndsListener, IterationStartsListener
 		
 		Map<Geometry, Double> time_map = validateTime(current_leg);
 		
-		Geometry startGeom = LocalChecker.getContainingGeometry(current_leg.getStart());
-		Geometry endGeom = LocalChecker.getContainingGeometry(current_leg.getEnd());
+		Geometry startGeom = LocalAreaUtils.getContainingGeometry(current_leg.getStart());
+		Geometry endGeom = LocalAreaUtils.getContainingGeometry(current_leg.getEnd());
 		
 		List<LinkValidation> validation_list = new ArrayList<>(current_leg.notification_list.size() / 2);
 		
@@ -127,7 +127,7 @@ public class LAHandler implements IterationEndsListener, IterationStartsListener
 				if(entry.getKey() == startGeom || entry.getKey() == endGeom) continue;
 				score += entry.getValue();
 			}
-			builder.append(person_id + " " + validation + " " + LocalChecker.getContainedLength(endGeom, null) + System.lineSeparator());
+			builder.append(person_id + " " + validation + " " + LocalAreaUtils.getContainedLength(endGeom, null) + System.lineSeparator());
 		}
 		
 		return score;

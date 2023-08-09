@@ -70,7 +70,7 @@ import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesM
 import org.matsim.optDRT.MultiModeOptDrtConfigGroup;
 import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
-import org.matsim.run.custom.LAModule;
+import org.matsim.run.custom.LocalAreaModule;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
@@ -279,9 +279,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
 				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
 				
-				localZones = true;
+				localZones = false;
 				if(localZones) {
-					install(new LAModule(controler, "res/Leipzig.osm"));	
+					install(new LocalAreaModule(controler, "res/Leipzig.osm"));	
 				}
 				
 			}

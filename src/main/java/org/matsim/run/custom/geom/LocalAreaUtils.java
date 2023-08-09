@@ -1,7 +1,10 @@
 package org.matsim.run.custom.geom;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -21,19 +24,12 @@ import de.sebidd.base.osm.data.OSMDataset;
 import de.sebidd.base.osm.data.OSMRelation;
 import de.sebidd.base.osm.data.OSMWay;
 
-public final class LocalChecker {
+public final class LocalAreaUtils {
 
-	private static List<Geometry> geometryList = new ArrayList<>();
 	private static final GeometryFactory geomFactory = new GeometryFactory();
 	
-	public static GeometryFactory getGeomFactory() {
-		return geomFactory;
-	}
-	
-	private LocalChecker() {}
-	
-	public static void setOSM(String path) {
-		geometryList.clear();
+	public static Set<Geometry> loadGeometryFromOSM(String path) {
+		Set<Geometry> geomSet = new HashSet<>();
 		OSMDataset dataset = OSMXML.load(path).get();
 
 		CoordinateTransformation transformation = TransformationFactory.getCoordinateTransformation("GEOGCS[\"WGS 84\",\r\n"
@@ -79,22 +75,29 @@ public final class LocalChecker {
 							Coord coordOut = transformation.transform(new Coord(coordIn.x, coordIn.y));
 							coordList[i] = new Coordinate(coordOut.getX(), coordOut.getY());
 						}
-						geometryList.add(geomFactory.createPolygon(coordList));
+						geomSet.add(geomFactory.createPolygon(coordList));
 						break;
 					}
 				}
 			}
 		}
 		
-		System.err.println(geometryList);
-		
+		return geomSet;
 	}
 	
-	public static Geometry getContainingGeometry(Coord coord) {
-		for(Geometry geom : geometryList) {
+	public static Geometry getContainingGeometry(Coord coord, Set<Geometry> geomSet) {
+		for(Geometry geom : geomSet) {
 			if(contains(geom, coord)) return geom;
 		}
 		return null;
+	}
+	
+	public static Set<Geometry> getContainingGeometries(Coord coord, Set<Geometry> geomSet){
+		Set<Geometry> out = new HashSet<>();
+		for(Geometry geom : geomSet) {
+			if(contains(geom, coord)) out.add(geom);
+		}
+		return out;
 	}
 	
 	public static double getContainedLength(Geometry geom, Link link) {

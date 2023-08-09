@@ -6,7 +6,7 @@
     </module>
 
     <module name="controler">
-        <param name="lastIteration" value="1"/>
+        <param name="lastIteration" value="25"/>
         <param name="overwriteFiles" value="failIfDirectoryExists"/>
         <param name="runId" value="leipzig-25pct"/>
         <param name="outputDirectory" value="./output/output-leipzig-25pct"/>

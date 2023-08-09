@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
-import org.matsim.run.custom.geom.LocalChecker;
+import org.matsim.run.custom.geom.LocalAreaUtils;
 
 public final class LinkValidation {
 		
@@ -27,14 +27,14 @@ public final class LinkValidation {
 		}
 		
 		public LineString asLine() {
-			return LocalChecker.asLinestring(start.getPosition(), end.getPosition());
+			return LocalAreaUtils.asLinestring(start.getPosition(), end.getPosition());
 		}
 		
 		public double getDeltaTime() {
 			return end.getTime() - start.getTime();
 		}
 		
-		public Map<Geometry, Double> getPolygonScoring(LAModule module) {
+		public Map<Geometry, Double> getPolygonScoring(LocalAreaModule module) {
 			Map<Geometry, Double> out = new HashMap<>();
 			
 			
