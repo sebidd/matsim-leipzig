@@ -71,8 +71,10 @@ import org.matsim.optDRT.MultiModeOptDrtConfigGroup;
 import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
 import org.matsim.run.custom.LocalAreaModule;
+import org.matsim.run.custom.LocalAreaScoringFactory;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
+import org.springframework.cglib.core.Local;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
@@ -98,7 +100,7 @@ import java.util.*;
 		DrtVehiclesRoadUsageAnalysis.class, ParkedVehiclesAnalysis.class, NoiseAnalysis.class
 })
 public class RunLeipzigScenario extends MATSimApplication {
-	
+
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
 
 	static final String VERSION = "1.1";
@@ -126,7 +128,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	@CommandLine.Option(names = "--local-zones", defaultValue = "false", description = "Residential zones have restricted access by crossing traffic.")
 	private boolean localZones;
-	
+
 	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
 	Double relativeSpeedChange;
 
@@ -136,6 +138,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
 	private final NetworkOptions network = new NetworkOptions();
 
+	
+	
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);
 	}
@@ -278,14 +282,19 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
 				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
-				
-				localZones = false;
-				if(localZones) {
-					install(new LocalAreaModule(controler, "res/Leipzig.osm"));	
-				}
-				
+
+
+
 			}
 		});
+
+		localZones = true;
+		if(localZones) {
+			LocalAreaModule module = LocalAreaModule.get();
+			module.setLocalAreas("res/Leipzig.osm", controler.getScenario().getNetwork());
+//			module.storeNetworkAsFile(controler.getScenario().getNetwork(), module.debugPath + "out-1.xml");
+			controler.addOverridingModule(module);
+		}
 
 		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);

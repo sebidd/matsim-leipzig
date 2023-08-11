@@ -5,39 +5,39 @@ import java.util.Map;
 
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
-import org.matsim.run.custom.geom.LocalAreaUtils;
 
 public final class LinkValidation {
-		
+
 		private final LinkNotification start;
 		private final LinkNotification end;
-		
+
 		public LinkValidation(LinkNotification start, LinkNotification end) {
 			if(start.link != end.link) throw new RuntimeException("Anfangs- und Endlinks für die Linkvalidation stimmen nicht überein!");
 			this.start = start;
 			this.end = end;
 		}
-		
+
 		public LinkNotification getStartNotification() {
 			return this.start;
 		}
-		
+
 		public LinkNotification getEndNotification() {
 			return this.end;
 		}
-		
+
 		public LineString asLine() {
-			return LocalAreaUtils.asLinestring(start.getPosition(), end.getPosition());
+			//return LocalAreaUtils.asLinestring(start.getPosition(), end.getPosition());
+			return null;
 		}
-		
+
 		public double getDeltaTime() {
 			return end.getTime() - start.getTime();
 		}
-		
+
 		public Map<Geometry, Double> getPolygonScoring(LocalAreaModule module) {
 			Map<Geometry, Double> out = new HashMap<>();
-			
-			
+
+
 //			for(Polygon poly : module.getPolygons()) {
 //				Set<Vec2d> intersections = poly.getOuter().getIntersections(line);
 //				if(intersections.isEmpty()) {
@@ -54,18 +54,18 @@ public final class LinkValidation {
 //						double pb = line.getProgress(f);
 //						return Double.compare(pa, pb);
 //					});
-//					
+//
 //				}
 //			}
-			
+
 			return out;
 		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LinkValidation[" + "s-time=" + start.getTime() + ", s-progress=" + start.getProgress() + ", e-time=" + end.getTime() + ", e-progress=" + end.getProgress() + "]");
 			return builder.toString();
 		}
-		
+
 	}

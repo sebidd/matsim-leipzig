@@ -1,32 +1,22 @@
-package org.matsim.run.custom.geom;
+package org.matsim.run.custom;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.*;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
-import org.matsim.run.custom.osm.OSMDataset;
-import org.matsim.run.custom.osm.OSMRelation;
-import org.matsim.run.custom.osm.OSMWay;
-import org.matsim.run.custom.osm.OSMXML;
-import org.matsim.run.custom.osm.Vec2d;
+import org.matsim.run.custom.osm.*;
 
 public final class LocalAreaUtils {
 
 	private static final GeometryFactory geomFactory = new GeometryFactory();
-	
+
 	public static Set<Geometry> loadGeometryFromOSM(String path) {
+
 		Set<Geometry> geomSet = new HashSet<>();
 		OSMDataset dataset = OSMXML.load(path).get();
 
@@ -79,17 +69,52 @@ public final class LocalAreaUtils {
 				}
 			}
 		}
-		
+
 		return geomSet;
 	}
-	
+
 	public static Geometry getContainingGeometry(Coord coord, Set<Geometry> geomSet) {
 		for(Geometry geom : geomSet) {
 			if(contains(geom, coord)) return geom;
 		}
 		return null;
 	}
-	
+
+	public static Geometry getContainingGeometryThreePointCheck(Link link, Set<Geometry> geomSet){
+		Coord start = link.getFromNode().getCoord();
+		Coord end = link.getToNode().getCoord();
+		Coord mid = new Coord(start.getX() + (0.5 * (end.getX() - start.getX())), start.getY() + (0.5 * (end.getY() - start.getY())));
+
+		Geometry g1 = getContainingGeometry(start, geomSet);
+		Geometry g2 = getContainingGeometry(mid, geomSet);
+		Geometry g3 = getContainingGeometry(end, geomSet);
+
+		int count = 0;
+		if(g1 != null) count++;
+		if(g2 != null) count++;
+		if(g3 != null) count++;
+
+		if(count >= 2){
+			if(g1 != null) return g1;
+			if(g2 != null) return g2;
+			return g3;
+		}
+
+		return null;
+	}
+
+	public static Geometry getContainingGeometryMin1(Link link, Set<Geometry> geomSet){
+		Coord start = link.getFromNode().getCoord();
+		Coord end = link.getToNode().getCoord();
+
+		Geometry g1 = getContainingGeometry(start, geomSet);
+		Geometry g3 = getContainingGeometry(end, geomSet);
+
+		if(g1 != null) return g1;
+		else if(g3 != null) return g3;
+		else return null;
+	}
+
 	public static Set<Geometry> getContainingGeometries(Coord coord, Set<Geometry> geomSet){
 		Set<Geometry> out = new HashSet<>();
 		for(Geometry geom : geomSet) {
@@ -97,18 +122,18 @@ public final class LocalAreaUtils {
 		}
 		return out;
 	}
-	
+
 	public static double getContainedLength(Geometry geom, Link link) {
 		LineString ls = asLinestring(link);
 		Geometry intersection = ls.intersection(geom);
 		System.out.println(intersection.getGeometryType());
 		return 0;
 	}
-	
+
 	public static LineString asLinestring(Link link) {
 		return geomFactory.createLineString(new Coordinate[] {asPoint(link.getFromNode()).getCoordinate(), asPoint(link.getToNode()).getCoordinate()});
 	}
-	
+
 	public static LineString asLinestring(Coord... coords) {
 		Coordinate[] out = new Coordinate[coords.length];
 		for(int i = 0; i < coords.length; i++) {
@@ -116,17 +141,16 @@ public final class LocalAreaUtils {
 		}
 		return geomFactory.createLineString(out);
 	}
-	
+
 	public static Point asPoint(Coord coord) {
 		return geomFactory.createPoint(new Coordinate(coord.getX(), coord.getY()));
 	}
-	
+
 	public static Point asPoint(Node node) {
 		return asPoint(node.getCoord());
 	}
-	
+
 	public static boolean contains(Geometry geom, Coord coord) {
 		return geom.contains(asPoint(coord));
 	}
-	
 }

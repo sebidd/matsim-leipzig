@@ -131,6 +131,10 @@
 					<groupId>com.github.matsim-org</groupId>
 					<artifactId>gtfs2matsim</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>xml-apis</groupId>
+					<artifactId>xml-apis</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 
