@@ -38,15 +38,18 @@ public class LocalAreaScoring implements SumScoringFunction.TripScoring {
 	 * Handles a trip performed by an MATSim agent.
 	 */
 	public void handleTrip(final Trip trip) {
+		//Validates the starting geometry of an agents trip, if there is one. Else the startGeom local variable remains null.
 		Geometry startGeom = null;
 		if(trip.getOriginActivity() != null && trip.getOriginActivity().getCoord() != null){
 			startGeom = LocalAreaUtils.getContainingGeometry(trip.getOriginActivity().getCoord(), LocalAreaModule.get().getCollSet());
 		}
+		//Validates the end geometry of an agents trip, if there is one. Else the endGeom local variable remains null.
 		Geometry endGeom = null;
 		if(trip.getDestinationActivity() != null && trip.getDestinationActivity().getCoord() != null) {
 			endGeom = LocalAreaUtils.getContainingGeometry(trip.getDestinationActivity().getCoord(), LocalAreaModule.get().getCollSet());
 		}
 
+		//Checks each leg within a trip for the restricted modes defined within the LocalAreaModule class. If a leg with restricted mode is found, further validation of passed polygons is started.
 		for(Leg leg : trip.getLegsOnly()) {
 			if(LocalAreaModule.get().getProhibitedModes().contains(leg.getMode())) {
 				final String[] linkStrs = leg.getRoute().getRouteDescription().split(" ");
