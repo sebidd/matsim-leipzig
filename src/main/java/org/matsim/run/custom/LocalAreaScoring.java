@@ -24,12 +24,19 @@ public class LocalAreaScoring implements SumScoringFunction.TripScoring {
 	@Inject
 	private Network network;
 
+	/**
+	 * Creates a new local area scoring instance from a MATSim network to process.
+	 * @param network The network on which agents travel.
+	 */
 	public LocalAreaScoring(Network network) {
 		this.time = 0;
 		this.network = network;
 	}
 
 	@Override
+	/**
+	 * Handles a trip performed by an MATSim agent.
+	 */
 	public void handleTrip(final Trip trip) {
 		Geometry startGeom = null;
 		if(trip.getOriginActivity() != null && trip.getOriginActivity().getCoord() != null){
@@ -61,14 +68,15 @@ public class LocalAreaScoring implements SumScoringFunction.TripScoring {
 
 	}
 
-
-
 	@Override
 	public void finish() {
 
 	}
 
 	@Override
+	/**
+	 * Handles the local area scoring of a MATSim agents trip by applying a transformation function implemented in the LocalAreaModule class singleton to the accumulated time spent in local areas by the current agent.
+	 */
 	public double getScore() {
 		double penalty = -LocalAreaModule.get().getScoringFunction().apply(time);
 		LocalAreaModule.PENALTY_SUM += penalty;

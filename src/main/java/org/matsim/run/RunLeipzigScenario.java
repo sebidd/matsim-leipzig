@@ -288,7 +288,11 @@ public class RunLeipzigScenario extends MATSimApplication {
 			}
 		});
 
-		localZones = true;
+		/*
+		 * This piece of code handles the implementation of the local zones scoring - short term LA - which applies penalty to the usage of local areas by through traffic.
+		 * The localZones variable is also defined as an input parameter to the startup arguments, however this functionality is not yet used and the state of the localZones boolean was applied locally for our purposes.
+		 */
+//		localZones = true;
 		if(localZones) {
 			LocalAreaModule module = LocalAreaModule.get();
 			module.setLocalAreas("res/Leipzig.osm", controler.getScenario().getNetwork());

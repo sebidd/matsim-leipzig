@@ -11,13 +11,24 @@ import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.TransformationFactory;
 import org.matsim.run.custom.osm.*;
 
+/**
+ * Class containing static helper methods for working with .osm input and geometry validation.
+ * @author Sebastian
+ *
+ */
 public final class LocalAreaUtils {
 
 	private static final GeometryFactory geomFactory = new GeometryFactory();
 
+	/**
+	 * Loads all local area polygons from an .osm file by parsing the file and transforming the OSM default coordinate system (WGS84 degrees) to the coordinate system defined in the MATSim config (ETRS89 / UTM Zone 32N).
+	 * @param path
+	 * @return
+	 */
 	public static Set<Geometry> loadGeometryFromOSM(String path) {
 
 		Set<Geometry> geomSet = new HashSet<>();
+		//The following classes and all of its dependencies were self written and taken from another project (de.sebidd.rail).
 		OSMDataset dataset = OSMXML.load(path).get();
 
 		CoordinateTransformation transformation = TransformationFactory.getCoordinateTransformation("GEOGCS[\"WGS 84\",\r\n"

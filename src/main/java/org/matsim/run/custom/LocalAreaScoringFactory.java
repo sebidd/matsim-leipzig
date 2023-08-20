@@ -8,6 +8,11 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.scoring.SumScoringFunction;
 import org.matsim.core.scoring.functions.*;
 
+/**
+ * Local area scoring factory as subclass of the MATSim internal scoring function factory.
+ * @author Sebastian
+ *
+ */
 public class LocalAreaScoringFactory implements ScoringFunctionFactory {
 
 	@Inject
@@ -21,11 +26,17 @@ public class LocalAreaScoringFactory implements ScoringFunctionFactory {
 		final ScoringParameters params = pparams.getScoringParameters(person);
 
 		SumScoringFunction ssf = new SumScoringFunction();
+		/*
+		 * Default scoring terms of MATSim.
+		 */
 		ssf.addScoringFunction(new CharyparNagelLegScoring(params, network));
 		ssf.addScoringFunction(new CharyparNagelActivityScoring(params));
 		ssf.addScoringFunction(new CharyparNagelMoneyScoring(params));
 		ssf.addScoringFunction(new CharyparNagelAgentStuckScoring(params));
 
+		/*
+		 * Custom scoring term for local areas.
+		 */
 		ssf.addScoringFunction(new LocalAreaScoring(network));
 		
 		return ssf;
